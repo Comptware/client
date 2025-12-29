@@ -33,11 +33,14 @@ export async function middleware(request: NextRequest) {
     "/kyc",
     "/sign-agreement",
     "/error",
+    "/bundles",
+    "/checkout",
   ];
 
-  const isOnboardingOrPublic = 
+  const isOnboardingOrPublic =
     onboardingAndPublicPaths.includes(effectivePath) ||
-    effectivePath.startsWith("/products");
+    effectivePath.startsWith("/products") ||
+    effectivePath.startsWith("/bundles");
 
   // Always let Auth0 handle /auth routes
   if (effectivePath.startsWith("/auth")) {
@@ -63,7 +66,7 @@ export async function middleware(request: NextRequest) {
 
   // Public unauthenticated access
   if (!session?.user) {
-    if (effectivePath === "/" || effectivePath.startsWith("/products")) {
+    if (effectivePath === "/" || effectivePath === "/checkout" || effectivePath.startsWith("/products") || effectivePath.startsWith("/bundles")) {
       return NextResponse.next();
     }
     // Should not reach here for onboarding paths due to early bypass
@@ -108,11 +111,15 @@ if (isClient && isOnboardingOrPublic) {
     return null;
   };
 
+  // Define pages that don't require authentication or KYC
+  const unauthPages = ["/bundles", "/checkout"];
+  const isUnauthPage = unauthPages.includes(effectivePath) || effectivePath.startsWith("/bundles/");
+
   if (!user.depositPaid && !cart) {
     const res = redirectIfNotCurrent("/products");
     if (res) return res;
   }
-  else if (user.kycStatus !== "APPROVED") {
+  else if (user.kycStatus !== "APPROVED" && !isUnauthPage) {
     const res = redirectIfNotCurrent("/kyc");
     if (res) return res;
   }
