@@ -30,8 +30,10 @@ export async function middleware(request: NextRequest) {
     "/products",
     "/invoice",
     "/payment",
+    "/pay",
     "/bitpay",
     "/bank-wire",
+    "/wallet",
     "/kyc",
     "/sign-agreement",
     "/error",
@@ -85,6 +87,26 @@ export async function middleware(request: NextRequest) {
     (session.user?.["https://api.suncore.app/roles"] as string[]) ?? [];
   const isAdmin = roles.includes("ADMIN") || roles.includes("OPERATIONS");
   const isClient = roles.length === 0;
+  const walletSelection = request.cookies.get("suncore-wallet-selected")?.value;
+  console.log(`Wallet selection cookie: ${walletSelection}`);
+  const hasWalletSelection =
+    walletSelection === "suncore" || walletSelection === "personal";
+  let cachedUserData: Awaited<
+    ReturnType<typeof getCurrentUserWithCart>
+  > | null = null;
+
+  const getUserData = async () => {
+    if (cachedUserData) {
+      return cachedUserData;
+    }
+    try {
+      cachedUserData = await getCurrentUserWithCart(token);
+      return cachedUserData;
+    } catch (err) {
+      console.error("Failed to fetch user in middleware:", err);
+      return null;
+    }
+  };
 
   // Admin routing
   if (isAdmin) {
@@ -108,14 +130,11 @@ export async function middleware(request: NextRequest) {
 
   // For logged-in clients: enforce KYC approval for protected routes
   if (isClient && !isPublicPage) {
-    let user;
-    try {
-      const data = await getCurrentUserWithCart(token);
-      user = data.user;
-    } catch (err) {
-      console.error("Failed to fetch user in middleware:", err);
+    const data = await getUserData();
+    if (!data) {
       return NextResponse.redirect(`${origin}/error`);
     }
+    const user = data.user;
 
     // Redirect to KYC if not approved (unless already on KYC page)
     if (user.kycStatus !== "APPROVED" && !effectivePath.startsWith("/kyc")) {
@@ -125,19 +144,21 @@ export async function middleware(request: NextRequest) {
 
   // Client onboarding flow — only for actual app pages (not assets)
   if (isClient && isOnboardingOrPublic) {
-    let user, cart;
-    try {
-      const data = await getCurrentUserWithCart(token);
-      console.log(
-        `Payment lock check: path=${effectivePath}, remaining=${
-          data.cart?.remainingAmount || 0
-        }`
-      );
-      user = data.user;
-      cart = data.cart;
-    } catch (err) {
-      console.error("Failed to fetch user in middleware:", err);
+    const data = await getUserData();
+    if (!data) {
       return NextResponse.redirect(`${origin}/error`);
+    }
+    const user = data.user;
+    const cart = data.cart;
+
+    console.log(
+      `Payment lock check: path=${effectivePath}, remaining=${
+        cart?.remainingAmount || 0
+      }`
+    );
+
+    if (effectivePath === "/" && !hasWalletSelection) {
+      return NextResponse.redirect(`${origin}/wallet`);
     }
 
     const redirectIfNotCurrent = (target: string) => {
@@ -147,32 +168,29 @@ export async function middleware(request: NextRequest) {
       return null;
     };
 
-    // Define pages that don't require authentication or KYC
-    const unauthPages = ["/bundles", "/checkout"];
-    const isUnauthPage =
-      unauthPages.includes(effectivePath) ||
-      effectivePath.startsWith("/bundles/");
-
-    if (!user.depositPaid && !cart) {
-      const res = redirectIfNotCurrent("/products");
-      if (res) return res;
-    } else if (user.kycStatus !== "APPROVED" && !isUnauthPage) {
-      const res = redirectIfNotCurrent("/kyc");
-      if (res) return res;
+    // Redirects based on onboarding status and KYC/payment/signing
+    let nextPath: string | null = null;
+    if (user.kycStatus !== "APPROVED") {
+      nextPath = "/kyc";
+    } else if (!user.depositPaid && !cart) {
+      nextPath = "/bundles";
     } else if (
-      user.kycStatus === "APPROVED" &&
-      cart &&
-      cart.depositApplied === 0
+      (cart && cart.depositApplied === 0) ||
+      (!user.depositPaid && cart)
     ) {
-      const res = redirectIfNotCurrent("/payment");
-      if (res) return res;
+      nextPath = "/pay";
     } else if (user.depositPaid && !user.hasSigned) {
-      const res = redirectIfNotCurrent("/sign-agreement");
-      if (res) return res;
+      nextPath = "/sign-agreement";
     }
-    // Payment pending lock
-    else if (user.hasSigned && cart && cart.remainingAmount > 0) {
-      const allowed = ["/invoice", "/payment", "/bitpay", "/bank-wire"];
+
+    if (nextPath) {
+      const shouldRedirectToPay = nextPath === "/pay" && effectivePath === "/";
+      if (nextPath !== "/pay" || shouldRedirectToPay) {
+        const res = redirectIfNotCurrent(nextPath);
+        if (res) return res;
+      }
+    } else if (user.hasSigned && cart && cart.remainingAmount > 0) {
+      const allowed = ["/invoice", "/pay", "/bitpay", "/bank-wire"];
 
       if (allowed.includes(effectivePath)) {
         console.log("Allowed: exact path match");
@@ -193,6 +211,11 @@ export async function middleware(request: NextRequest) {
 
       console.log("Blocked: redirecting to /invoice");
       return NextResponse.redirect(`${origin}/invoice`);
+    }
+
+    // If the user lands on "/", continue to app once onboarding redirects are satisfied.
+    if (effectivePath === "/") {
+      return NextResponse.redirect(`${origin}/dashboard`);
     }
   }
 
