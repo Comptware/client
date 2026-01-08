@@ -1,11 +1,18 @@
 // app/(not_protected)/checkout/page.tsx
-'use client';
+"use client";
 
-import { useGetCartQuery, useGetProductsQuery, useRemoveCartItemMutation,
-  useUpdateCartItemMutation } from "@/store/features/cart/cartApi";
-import { removeGuestCartItem, updateGuestCartItem } from "@/store/features/cart/guestCartSlice";
+import {
+  useGetCartQuery,
+  useGetProductsQuery,
+  useRemoveCartItemMutation,
+  useUpdateCartItemMutation,
+} from "@/store/features/cart/cartApi";
+import {
+  removeGuestCartItem,
+  updateGuestCartItem,
+} from "@/store/features/cart/guestCartSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { CartItem, ProductsResponse } from "@/types";
+import { CartItem, FormattedCartItem, ProductsResponse } from "@/types";
 import { handleError } from "@/utils/errorHandler";
 import { formatCart } from "@/utils/formatCart";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -50,7 +57,9 @@ export default function CheckoutPage() {
 
   if (productError)
     return (
-      <p className="text-red-600">{handleError(error, { showToast: true, forUI: true })}</p>
+      <p className="text-red-600">
+        {handleError(error, { showToast: true, forUI: true })}
+      </p>
     );
   if (!data) return null;
 
@@ -79,12 +88,14 @@ export default function CheckoutPage() {
             asicSpec: item.asicSpec ?? undefined,
           }).unwrap();
         } else {
-          dispatch(updateGuestCartItem({
-            productType: item.productType,
-            unitPrice: item.unitPrice,
-            quantity: editQuantity,
-            asicSpec: item.asicSpec ?? undefined,
-          }));
+          dispatch(
+            updateGuestCartItem({
+              productType: item.productType,
+              unitPrice: item.unitPrice,
+              quantity: editQuantity,
+              asicSpec: item.asicSpec ?? undefined,
+            })
+          );
         }
         setEditingItem(null);
       } catch (error) {
@@ -117,7 +128,7 @@ export default function CheckoutPage() {
   const handleNext = async () => {
     try {
       setNavigating(true);
-      if ((!authUser && !authLoading) && (!token || !user)) {
+      if (!authUser && !authLoading && (!token || !user)) {
         router.push("/auth/login");
       } else {
         router.push("/wallet");
@@ -169,22 +180,33 @@ export default function CheckoutPage() {
 
           {isLoading ? (
             <div className="flex justify-center py-10">
-              <p className="text-xl font-black text-gray-500">Loading cart...</p>
+              <p className="text-xl font-black text-gray-500">
+                Loading cart...
+              </p>
             </div>
           ) : (
             <>
               <div className="mx-4 mt-8">
-                <h2 className="md:text-2xl text-xl font-black mb-6">Your bundle:</h2>
+                <h2 className="md:text-2xl text-xl font-black mb-6">
+                  Your bundle:
+                </h2>
 
-                {isError && <p className="text-red-600 w-full text-center mb-4">{(error as any)?.data?.message || 'Failed to load cart'}</p>}
+                {isError && (
+                  <p className="text-red-600 w-full text-center mb-4">
+                    {(error as any)?.data?.message || "Failed to load cart"}
+                  </p>
+                )}
 
                 {updatedCart && updatedCart.items.length > 0 ? (
-                  updatedCart.items.map((item, index) => {
+                  updatedCart.items.map((item: FormattedCartItem, index) => {
                     const itemKey = getItemKey(item);
                     const isEditing = editingItem === itemKey;
 
                     return (
-                      <div key={index} className="mb-8 border-b border-gray-200 pb-6">
+                      <div
+                        key={index}
+                        className="mb-8 border-b border-gray-200 pb-6"
+                      >
                         <h3 className="md:text-xl text-lg font-black text-blue mb-2">
                           {item.label}
                         </h3>
@@ -205,7 +227,9 @@ export default function CheckoutPage() {
                                 type="number"
                                 min="1"
                                 value={editQuantity}
-                                onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                                onChange={(e) =>
+                                  setEditQuantity(parseInt(e.target.value) || 1)
+                                }
                                 className="border border-gray-300 rounded px-3 py-1 w-20"
                               />
                             </div>
@@ -324,5 +348,5 @@ export default function CheckoutPage() {
         </div>
       </section>
     </>
-  )
+  );
 }

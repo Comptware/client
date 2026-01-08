@@ -80,6 +80,12 @@ export interface CartItem {
   _id: string;
 }
 
+// FormattedCartItem extends CartItem with product metadata
+export interface FormattedCartItem extends CartItem {
+  description: string;
+  label: string;
+}
+
 // --------------------
 // Cart (two variants)
 // --------------------
@@ -103,6 +109,11 @@ export interface Cart extends BackendCart {
   currencySymbol: string;
   totalAmountUSD: number;
   locale?: string;
+}
+
+// FormattedCart extends Cart with formatted items
+export interface FormattedCart extends Omit<Cart, 'items'> {
+  items: FormattedCartItem[];
 }
 
 // /auth/me response
