@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth0 } from "./lib/auth0";
 import { getCurrentUserWithCart } from "@/api/client";
 
-const WALLET_COOKIE = "suncore-wallet-selected";
-
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   let pathname = url.pathname;
@@ -150,10 +148,6 @@ export async function middleware(request: NextRequest) {
     const user = data.user;
     const cart = data.cart;
 
-    const walletSelection = request.cookies.get(WALLET_COOKIE)?.value;
-    const hasWalletSelection =
-      walletSelection === "suncore" || walletSelection === "personal";
-
     console.log(
       `Payment lock check: path=${effectivePath}, remaining=${
         cart?.remainingAmount || 0
@@ -184,14 +178,7 @@ export async function middleware(request: NextRequest) {
     if (nextPath) {
       const shouldRedirectToWallet =
         nextPath === "/wallet" && effectivePath === "/";
-      const skipWalletRedirect =
-        nextPath === "/wallet" &&
-        hasWalletSelection &&
-        (effectivePath === "/pay" || effectivePath === "/payment");
-      if (
-        !skipWalletRedirect &&
-        (nextPath !== "/wallet" || shouldRedirectToWallet)
-      ) {
+      if (nextPath !== "/wallet" || shouldRedirectToWallet) {
         const res = redirectIfNotCurrent(nextPath);
         if (res) return res;
       }
