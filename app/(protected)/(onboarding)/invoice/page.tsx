@@ -85,19 +85,19 @@ export default function InvoicePage() {
           <h3 className="text-xl font-semibold mt-4 p-4">Pay Remaining Balance</h3>
           <div className="flex md:flex-row flex-col gap-4 mt-2 p-4">
             <Link
-              href="/payment"
+              href="/pay?payment=credit_card"
               className="bg-blue-600 text-white px-4 py-2 text-center md:text-left rounded hover:bg-blue-700"
             >
               Pay with Stripe
             </Link>
             <Link
-              href="/bitpay"
+              href="/pay?payment=bitpay"
               className="bg-green-600 text-white px-4 py-2 text-center md:text-left rounded hover:bg-green-700"
             >
               Pay with BitPay
             </Link>
             <Link
-              href="/bank-wire"
+              href="/pay?payment=wire"
               className="bg-gray-700 text-white px-4 py-2 text-center md:text-left rounded hover:bg-gray-800"
             >
               Bank Wire

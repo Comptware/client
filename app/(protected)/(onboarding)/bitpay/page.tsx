@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useAppSelector } from '@/store/hooks';
-import { useGetCartQuery } from '@/store/features/cart/cartApi';
-import { useCreateBitpayInvoiceMutation } from '@/store/features/payment/paymentApi';
-import { formatCurrency } from '@/utils/formatCurrency';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useAppSelector } from "@/store/hooks";
+import { useGetCartQuery } from "@/store/features/cart/cartApi";
+import { useCreateBitpayInvoiceMutation } from "@/store/features/payment/paymentApi";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 export default function BitPayPageClient() {
   const { token, user } = useAppSelector((s) => s.auth);
@@ -16,20 +16,20 @@ export default function BitPayPageClient() {
   const { data: cart } = useGetCartQuery(undefined, { skip: !token });
   const [createBitpayInvoice] = useCreateBitpayInvoiceMutation();
   const [loading, setLoading] = useState(false);
-  const [invoiceUrl, setInvoiceUrl] = useState('');
+  const [invoiceUrl, setInvoiceUrl] = useState("");
 
   const handleBitPay = async () => {
     setLoading(true);
     try {
       if (!user?.depositPaid) {
-        alert('You can only use BitPay for remaining balance payments.');
-        router.push('/payment');
+        alert("You can only use BitPay for remaining balance payments.");
+        router.push("/pay");
         return;
       }
 
       const { paymentUrl } = await createBitpayInvoice().unwrap();
       setInvoiceUrl(paymentUrl);
-      window.open(paymentUrl, '_blank');
+      window.open(paymentUrl, "_blank");
     } finally {
       setLoading(false);
     }
@@ -46,15 +46,16 @@ export default function BitPayPageClient() {
 
       {invoiceUrl ? (
         <p className="text-green-600 font-medium">
-          Invoice created successfully. Please check the opened tab to complete your payment.
+          Invoice created successfully. Please check the opened tab to complete
+          your payment.
         </p>
       ) : (
         <>
           <p className="text-gray-600">
-            Remaining Balance:{' '}
+            Remaining Balance:{" "}
             {cart
               ? `${cart.currencySymbol}${formatCurrency(cart.remainingAmount)}`
-              : '--'}
+              : "--"}
           </p>
 
           <button
@@ -62,21 +63,19 @@ export default function BitPayPageClient() {
             disabled={loading}
             className="w-full bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 disabled:opacity-50"
           >
-            {loading ? 'Creating BitPay Invoice…' : 'Pay via BitPay'}
+            {loading ? "Creating BitPay Invoice…" : "Pay via BitPay"}
           </button>
         </>
       )}
-        <Link
-                  href="/payment"
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Pay with Stripe
-                </Link>
+      <Link
+        href="/payment"
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Pay with Stripe
+      </Link>
     </motion.div>
   );
 }
-
-
 
 // import BitPayPageClient from './BitPayPageClient';
 

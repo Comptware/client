@@ -87,10 +87,7 @@ export async function middleware(request: NextRequest) {
     (session.user?.["https://api.suncore.app/roles"] as string[]) ?? [];
   const isAdmin = roles.includes("ADMIN") || roles.includes("OPERATIONS");
   const isClient = roles.length === 0;
-  const walletSelection = request.cookies.get("suncore-wallet-selected")?.value;
-  console.log(`Wallet selection cookie: ${walletSelection}`);
-  const hasWalletSelection =
-    walletSelection === "suncore" || walletSelection === "personal";
+
   let cachedUserData: Awaited<
     ReturnType<typeof getCurrentUserWithCart>
   > | null = null;
@@ -156,11 +153,6 @@ export async function middleware(request: NextRequest) {
         cart?.remainingAmount || 0
       }`
     );
-
-    if (effectivePath === "/" && !hasWalletSelection) {
-      return NextResponse.redirect(`${origin}/wallet`);
-    }
-
     const redirectIfNotCurrent = (target: string) => {
       if (effectivePath !== target) {
         return NextResponse.redirect(`${origin}${target}`);
@@ -178,19 +170,20 @@ export async function middleware(request: NextRequest) {
       (cart && cart.depositApplied === 0) ||
       (!user.depositPaid && cart)
     ) {
-      nextPath = "/pay";
+      nextPath = "/wallet";
     } else if (user.depositPaid && !user.hasSigned) {
       nextPath = "/sign-agreement";
     }
 
     if (nextPath) {
-      const shouldRedirectToPay = nextPath === "/pay" && effectivePath === "/";
-      if (nextPath !== "/pay" || shouldRedirectToPay) {
+      const shouldRedirectToWallet =
+        nextPath === "/wallet" && effectivePath === "/";
+      if (nextPath !== "/wallet" || shouldRedirectToWallet) {
         const res = redirectIfNotCurrent(nextPath);
         if (res) return res;
       }
     } else if (user.hasSigned && cart && cart.remainingAmount > 0) {
-      const allowed = ["/invoice", "/pay", "/bitpay", "/bank-wire"];
+      const allowed = ["/invoice", "/wallet", "/pay", "/bitpay", "/bank-wire"];
 
       if (allowed.includes(effectivePath)) {
         console.log("Allowed: exact path match");
