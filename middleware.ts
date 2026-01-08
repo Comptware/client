@@ -167,8 +167,8 @@ export async function middleware(request: NextRequest) {
     } else if (!user.depositPaid && !cart) {
       nextPath = "/bundles";
     } else if (
-      (cart && cart.depositApplied === 0) ||
-      (!user.depositPaid && cart)
+      ((cart && cart.depositApplied === 0) || (!user.depositPaid && cart)) &&
+      effectivePath === "/"
     ) {
       nextPath = "/wallet";
     } else if (user.depositPaid && !user.hasSigned) {
