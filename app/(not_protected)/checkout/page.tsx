@@ -198,114 +198,122 @@ export default function CheckoutPage() {
                 )}
 
                 {updatedCart && updatedCart.items.length > 0 ? (
-                  updatedCart.items.map((item: FormattedCartItem, index) => {
-                    const itemKey = getItemKey(item);
-                    const isEditing = editingItem === itemKey;
+                  updatedCart.items.map(
+                    (item: FormattedCartItem, index: number) => {
+                      const itemKey = getItemKey(item);
+                      const isEditing = editingItem === itemKey;
 
-                    return (
-                      <div
-                        key={index}
-                        className="mb-8 border-b border-gray-200 pb-6"
-                      >
-                        <h3 className="md:text-xl text-lg font-black text-blue mb-2">
-                          {item.label}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                          {item.description}
-                        </p>
-                        {item.asicSpec && (
+                      return (
+                        <div
+                          key={index}
+                          className="mb-8 border-b border-gray-200 pb-6"
+                        >
+                          <h3 className="md:text-xl text-lg font-black text-blue mb-2">
+                            {item.label}
+                          </h3>
                           <p className="text-sm text-gray-600 mb-4">
-                            {item.asicSpec.model} — {item.asicSpec.hashRate}
+                            {item.description}
                           </p>
-                        )}
+                          {item.asicSpec && (
+                            <p className="text-sm text-gray-600 mb-4">
+                              {item.asicSpec.model} — {item.asicSpec.hashRate}
+                            </p>
+                          )}
 
-                        {isEditing ? (
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center space-x-2">
-                              <label className="text-sm font-bold">Qty:</label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={editQuantity}
-                                onChange={(e) =>
-                                  setEditQuantity(parseInt(e.target.value) || 1)
-                                }
-                                className="border border-gray-300 rounded px-3 py-1 w-20"
-                              />
+                          {isEditing ? (
+                            <div className="space-y-2 mb-4">
+                              <div className="flex items-center space-x-2">
+                                <label className="text-sm font-bold">
+                                  Qty:
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={editQuantity}
+                                  onChange={(e) =>
+                                    setEditQuantity(
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="border border-gray-300 rounded px-3 py-1 w-20"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-sm">
+                                  Unit: {updatedCart.currencySymbol}
+                                  {formatCurrency(item.unitPrice)}
+                                </p>
+                                <p className="text-sm font-bold">
+                                  Subtotal: {updatedCart.currencySymbol}
+                                  {formatCurrency(
+                                    item.unitPrice * editQuantity
+                                  )}
+                                </p>
+                              </div>
                             </div>
-                            <div>
+                          ) : (
+                            <div className="space-y-1 mb-4">
+                              <p className="text-sm">Qty: {item.quantity}</p>
                               <p className="text-sm">
                                 Unit: {updatedCart.currencySymbol}
                                 {formatCurrency(item.unitPrice)}
                               </p>
                               <p className="text-sm font-bold">
                                 Subtotal: {updatedCart.currencySymbol}
-                                {formatCurrency(item.unitPrice * editQuantity)}
+                                {formatCurrency(item.totalPrice)}
                               </p>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-1 mb-4">
-                            <p className="text-sm">Qty: {item.quantity}</p>
-                            <p className="text-sm">
-                              Unit: {updatedCart.currencySymbol}
-                              {formatCurrency(item.unitPrice)}
-                            </p>
-                            <p className="text-sm font-bold">
-                              Subtotal: {updatedCart.currencySymbol}
-                              {formatCurrency(item.totalPrice)}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="flex space-x-4">
-                          {isEditing ? (
-                            <>
-                              <button
-                                onClick={() => handleSaveEdit(item)}
-                                disabled={updatingItem === itemKey}
-                                className="bg-primary text-white font-black rounded-full hover:bg-blue-700 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] flex items-center justify-center"
-                              >
-                                {updatingItem === itemKey ? (
-                                  <LoadingSpinner size="sm" />
-                                ) : (
-                                  "Save"
-                                )}
-                              </button>
-                              <button
-                                onClick={() => setEditingItem(null)}
-                                disabled={updatingItem === itemKey}
-                                className="bg-gray-300 text-dark font-black rounded-full hover:bg-gray-400 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => handleEdit(item)}
-                                disabled={removingItem === itemKey}
-                                className="bg-primary text-white font-black rounded-full hover:bg-blue-700 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleRemove(item)}
-                                disabled={removingItem === itemKey}
-                                className="bg-primary text-white font-black rounded-full hover:bg-blue-700 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] flex items-center justify-center"
-                              >
-                                {removingItem === itemKey ? (
-                                  <LoadingSpinner size="sm" />
-                                ) : (
-                                  "Remove"
-                                )}
-                              </button>
-                            </>
                           )}
+
+                          <div className="flex space-x-4">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  onClick={() => handleSaveEdit(item)}
+                                  disabled={updatingItem === itemKey}
+                                  className="bg-primary text-white font-black rounded-full hover:bg-blue-700 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] flex items-center justify-center"
+                                >
+                                  {updatingItem === itemKey ? (
+                                    <LoadingSpinner size="sm" />
+                                  ) : (
+                                    "Save"
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => setEditingItem(null)}
+                                  disabled={updatingItem === itemKey}
+                                  className="bg-gray-300 text-dark font-black rounded-full hover:bg-gray-400 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleEdit(item)}
+                                  disabled={removingItem === itemKey}
+                                  className="bg-primary text-white font-black rounded-full hover:bg-blue-700 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleRemove(item)}
+                                  disabled={removingItem === itemKey}
+                                  className="bg-primary text-white font-black rounded-full hover:bg-blue-700 px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] flex items-center justify-center"
+                                >
+                                  {removingItem === itemKey ? (
+                                    <LoadingSpinner size="sm" />
+                                  ) : (
+                                    "Remove"
+                                  )}
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    }
+                  )
                 ) : (
                   <div className="flex flex-col lg:flex-row gap-4">
                     <div className="w-full p-4 text-center">
